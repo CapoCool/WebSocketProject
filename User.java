@@ -8,6 +8,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 
 public class User {
 	
@@ -63,103 +64,28 @@ public class User {
 		this.portNumberForRightPort = portNumberForRightPort;
 	}
 	
-//	public void RunClient() {
-//		
-//		User user = new User();
-//		DatagramSocket sock = null;
-//		int port = 7777;
-//		byte[] b;
-//		DatagramPacket dp;
-//		byte[] buffer;
-//		DatagramPacket reply;
-//		String s = "";
-//		
-//		BufferedReader cin = new BufferedReader(new InputStreamReader(System.in));
-//		
-//		try
-//		{
-//			sock = new DatagramSocket();
-//			
-//			InetAddress host = InetAddress.getByName("localhost");
-//			echo("Welcome to Tweeter! Here's a list of commands:");
-//			echo("R: Registers a new user");
-//			echo("F: to follow another user");
-//			echo("D: to drop another user");
-//			echo("T: to tweet");
-//			echo("Q: to quit");
-//			
-//			
-//			while(!s.equals("Q"))
-//			{
-//				//take input and send the packet
-//				//echo("Enter message to send : ");
-//				s = (String)cin.readLine();
-//				b = s.getBytes();
-//				
-//				dp = new DatagramPacket(b , b.length , host , port);
-//				sock.send(dp);
-//				
-//				//now receive reply
-//				//buffer to receive incoming data
-//				buffer = new byte[65536];
-//				 reply = new DatagramPacket(buffer, buffer.length);
-//				sock.receive(reply);
-//				
-//				if(s.equals("R")) {
-//					byte[] data = reply.getData();
-//					s = new String(data, 0, reply.getLength());
-//					echo(s);
-//					
-//					s = (String)cin.readLine();
-//					b = s.getBytes();
-//					
-//					dp = new DatagramPacket(b , b.length , host , port);
-//					sock.send(dp);
-//					
-//					buffer = new byte[65536];
-//					 reply = new DatagramPacket(buffer, buffer.length);
-//					sock.receive(reply);
-//					
-//					data = reply.getData();
-//					s = new String(data, 0, reply.getLength());
-//					user.handle = s;
-//					user.setIpv4Address(host);
-//					user.setPortNumberForServer(port);
-//					
-//					echo(s);
-//				}
-//				
-//				//byte[] data = reply.getData();
-//				//s = new String(data, 0, reply.getLength());
-//				
-//				//echo the details of incoming data - client ip : client port - client message
-//				//echo(s);
-//			}
-//			sock.close();
-//		}
-//		
-//		catch(IOException e)
-//		{
-//			System.err.println("IOException " + e);
-//		}
-//		
-//	}
+
 	public static void main(String args[])
 	{
 		User user = new User();
 		DatagramSocket sock = null;
 		int port = 7777;
 		byte[] b;
+		byte[] data;
 		DatagramPacket dp;
 		byte[] buffer;
 		DatagramPacket reply;
 		String s = "";
 		
 		BufferedReader cin = new BufferedReader(new InputStreamReader(System.in));
+		Scanner scan = new Scanner(System.in);
 		
 		try
 		{
-			sock = new DatagramSocket();
+			//this is just for my own use
+			echo("Enter a port to use:");
+			s = scan.nextLine();
+			sock = new DatagramSocket(Integer.parseInt(s));
 			
 			InetAddress host = InetAddress.getByName("localhost");
 			echo("Welcome to Tweeter! Here's a list of commands:");
@@ -173,109 +99,35 @@ public class User {
 			while(!s.equals("Quit"))
 			{
 				//take input and send the packet
-				//echo("Enter message to send : ");
 				s = (String)cin.readLine();
 				b = s.getBytes();
 				
 				dp = new DatagramPacket(b , b.length , host , port);
 				sock.send(dp);
 				
-				//now receive reply
-				//buffer to receive incoming data
-				buffer = new byte[65536];
-				 reply = new DatagramPacket(buffer, buffer.length);
-				sock.receive(reply);
-				
-				if(s.equals("R")) {
+				if(s.substring(0,1).equals("R")) {
 					
 					if(user.handle == null) {
-					byte[] data = reply.getData();
-					s = new String(data, 0, reply.getLength());
-					echo(s);
-					
-					s = (String)cin.readLine();
-					b = s.getBytes();
-					
-					user.handle = s;
+					user.handle = s.substring(2);
 					user.setIpv4Address(host);
 					user.setPortNumberForServer(port);
-					
-					dp = new DatagramPacket(b , b.length , host , port);
-					sock.send(dp);
-					
-					buffer = new byte[65536];
-					 reply = new DatagramPacket(buffer, buffer.length);
-					sock.receive(reply);
-					
-					data = reply.getData();
-					s = new String(data, 0, reply.getLength());
-					
-					echo(s);
 					}
 					else {
 						echo("You have already created a user!");
 					}
 				}
 				
-				if(s.equals("Q")) {
-					byte[] data = reply.getData();
-					s = new String(data, 0, reply.getLength());
-					echo(s);
-					
-					buffer = new byte[65536];
-					 reply = new DatagramPacket(buffer, buffer.length);
-					sock.receive(reply);
-					
-					data = reply.getData();
-					s = new String(data, 0, reply.getLength());
-					
-					echo(s);
-				}
-				
-				if(s.equals("D")) {
-					byte[] data = reply.getData();
-					s = new String(data, 0, reply.getLength());
-					echo(s);
-					
-					buffer = new byte[65536];
-					 reply = new DatagramPacket(buffer, buffer.length);
-					sock.receive(reply);
-					
-					data = reply.getData();
-					s = new String(data, 0, reply.getLength());
-					
-					echo(s);
-				}
-				
-				if(s.equals("F")) {
-					byte[] data = reply.getData();
-					s = new String(data, 0, reply.getLength());
-					echo(s);
-					
-					s = (String)cin.readLine();
-					b = s.getBytes();
-					
-					dp = new DatagramPacket(b , b.length , host , port);
-					sock.send(dp);
-					
-					buffer = new byte[65536];
-					 reply = new DatagramPacket(buffer, buffer.length);
-					sock.receive(reply);
-					
-					data = reply.getData();
-					s = new String(data, 0, reply.getLength());
-					
-					echo(s);
-				}
-				
 				if(s.equals("whoami")) {
 					System.out.println("You are: " + user.handle);
 				}
-				//byte[] data = reply.getData();
-				//s = new String(data, 0, reply.getLength());
 				
-				//echo the details of incoming data - client ip : client port - client message
-				//echo(s);
+				buffer = new byte[65536];
+				 reply = new DatagramPacket(buffer, buffer.length);
+				sock.receive(reply);
+				data = reply.getData();
+				s = new String(data, 0, reply.getLength());
+			
+				echo(s);
 			}
 			sock.close();
 			echo("Client Closed");
