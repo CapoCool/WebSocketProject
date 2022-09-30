@@ -16,10 +16,7 @@ import java.util.Set;
 public class Tracker 
 {
 	private Hashtable<String, User> users = new Hashtable<String, User>();
-	private Socket socket = null;
-	private final int serverPortNumber = 1234; //made it this to make it easier to remember
-	private ServerSocket server = null;
-	private DataInputStream in = null;
+
 	
 	//maintains the list of followers
 	private Hashtable<String, List<User>> followers = new Hashtable<String, List<User>>();
@@ -168,6 +165,7 @@ public class Tracker
 		DatagramSocket sock = null;
 		Tracker tracker = new Tracker();
 		DatagramPacket dp;
+		String reply = "";
 		
 		try
 		{
@@ -178,86 +176,50 @@ public class Tracker
 			
 			//buffer to receive incoming data
 			byte[] buffer = new byte[65536];
-			//DatagramPacket incoming = new DatagramPacket(buffer, buffer.length);
+
 			
 			//2. Wait for an incoming data
 			System.out.println("Server socket created. Waiting for incoming data...");
+			
 			//communication loop
-			while(!s.equals("Quit"))
+			while(true)
 			{
 				DatagramPacket incoming = new DatagramPacket(buffer, buffer.length);
 				sock.receive(incoming);
 				byte[] data = incoming.getData();
 				s = new String(data, 0, incoming.getLength());
 				
-				if(s.equals("R")) {
-					
-					String reply = "Enter a handle:";
-					dp = new DatagramPacket(reply.getBytes() , reply.getBytes().length , incoming.getAddress() , incoming.getPort());
-					sock.send(dp);
-					sock.receive(incoming);
-					data = incoming.getData();
-					s = new String(data, 0, incoming.getLength());
-					
-					reply = tracker.Register(s, incoming.getAddress(), incoming.getPort());
-					dp = new DatagramPacket(reply.getBytes() , reply.getBytes().length , incoming.getAddress() , incoming.getPort());
-					sock.send(dp);
+				if(s.substring(0,1).equals("R")) {
+
+					reply = tracker.Register(s.substring(2), incoming.getAddress(), incoming.getPort());
 				}
 				
-				if(s.equals("F")) {
-					String reply = "Enter the user you wish to follow:";
-					dp = new DatagramPacket(reply.getBytes() , reply.getBytes().length , incoming.getAddress() , incoming.getPort());
-					sock.send(dp);
-					sock.receive(incoming);
-					data = incoming.getData();
-					s = new String(data, 0, incoming.getLength());
+				if(s.substring(0,1).equals("F")) {
 					
-					reply = tracker.Follow(s, tracker.getUser(incoming.getPort()).getHandle());
-					dp = new DatagramPacket(reply.getBytes() , reply.getBytes().length , incoming.getAddress() , incoming.getPort());
-					sock.send(dp);
+					reply = tracker.Follow(tracker.getUser(incoming.getPort()).getHandle(), s.substring(2));
+
 				}
-				
-				if(s.equals("D")) {
-					String reply = "Enter the user you wish to drop:";
-					dp = new DatagramPacket(reply.getBytes() , reply.getBytes().length , incoming.getAddress() , incoming.getPort());
-					sock.send(dp);
-					sock.receive(incoming);
-					data = incoming.getData();
-					s = new String(data, 0, incoming.getLength());
+		
+				if(s.substring(0,1).equals("D")) {
 					
-					reply = tracker.Drop(s, tracker.getUser(incoming.getPort()).getHandle());
-					dp = new DatagramPacket(reply.getBytes() , reply.getBytes().length , incoming.getAddress() , incoming.getPort());
-					sock.send(dp);
+					reply = tracker.Drop(s.substring(2), tracker.getUser(incoming.getPort()).getHandle());
 					
 				}
-				
-				if(s.equals("T")) {
-					
-				}
-				
-				if(s.equals("Q")) {
-					
-					String reply = "Here's a list of current users!";
-					dp = new DatagramPacket(reply.getBytes() , reply.getBytes().length , incoming.getAddress() , incoming.getPort());
-					sock.send(dp);
-					reply = tracker.Query();
-					dp = new DatagramPacket(reply.getBytes() , reply.getBytes().length , incoming.getAddress() , incoming.getPort());
-					sock.send(dp);
-				}
-				
-				//echo the details of incoming data - client ip : client port - client message
-				//System.out.println(incoming.getAddress().getHostAddress() + " : " + incoming.getPort() + " - " + s);
-				
-				//s = "OK : " + s;
-				//DatagramPacket dp = new DatagramPacket(s.getBytes() , s.getBytes().length , incoming.getAddress() , incoming.getPort());
-				//sock.send(dp);
-			}
 			
-			sock.close();
+				if(s.equals("Q")) {
+
+					reply = tracker.Query();
+
+				}
+
+				dp = new DatagramPacket(reply.getBytes() , reply.getBytes().length , incoming.getAddress() , incoming.getPort());
+				sock.send(dp);
+			}
 		}
 		
 		catch(IOException e)
 		{
+			sock.close();
 			System.err.println("IOException " + e);
 		}
 	}
