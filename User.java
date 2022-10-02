@@ -6,6 +6,8 @@ import java.io.InputStreamReader;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -69,7 +71,7 @@ public class User {
 	{
 		User user = new User();
 		DatagramSocket sock = null;
-		int port = 7777;
+		int port = 11000;
 		byte[] b;
 		byte[] data;
 		DatagramPacket dp;
@@ -85,9 +87,13 @@ public class User {
 			//this is just for my own use
 			echo("Enter a port to use:");
 			s = scan.nextLine();
-			sock = new DatagramSocket(Integer.parseInt(s));
+			sock = new DatagramSocket(null);
+//			InetAddress client = InetAddress.getLocalHost();
+//			SocketAddress clientSocket = new InetSocketAddress(client, Integer.parseInt(s));
 			
-			InetAddress host = InetAddress.getByName("localhost");
+			sock.bind(new InetSocketAddress(InetAddress.getLocalHost(), Integer.parseInt(s)));
+			InetAddress host = InetAddress.getByName("192.168.0.16");
+			echo("Address: " + sock.getLocalSocketAddress() + "Port:");
 			echo("Welcome to Tweeter! Here's a list of commands:");
 			echo("R: Registers a new user");
 			echo("F: to follow another user");
@@ -117,9 +123,16 @@ public class User {
 					}
 				}
 				
-				if(s.equals("whoami")) {
-					System.out.println("You are: " + user.handle);
+				if(s.equals("whoami") && user.handle != null) {
+					if(user.handle != null)
+					{
+						System.out.println("You are: " + user.handle);
+					}
+					else {
+						System.out.println("You have not created a user");
+					}
 				}
+				
 				
 				buffer = new byte[65536];
 				 reply = new DatagramPacket(buffer, buffer.length);
