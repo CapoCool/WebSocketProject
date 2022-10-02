@@ -6,8 +6,10 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
@@ -171,8 +173,14 @@ public class Tracker
 		{
 			String s = "";
 			//1. creating a server socket, parameter is local port number
-			sock = new DatagramSocket(7777);
-
+			sock = new DatagramSocket(null);
+			
+//			InetAddress server = InetAddress.getLocalHost();
+//			
+//			SocketAddress serverSocket = new InetSocketAddress(server, 11000);
+			
+			sock.bind(new InetSocketAddress(InetAddress.getLocalHost().getHostAddress(), 11000));
+			System.out.println(sock.getLocalSocketAddress());
 			
 			//buffer to receive incoming data
 			byte[] buffer = new byte[65536];
@@ -194,22 +202,25 @@ public class Tracker
 					reply = tracker.Register(s.substring(2), incoming.getAddress(), incoming.getPort());
 				}
 				
-				if(s.substring(0,1).equals("F")) {
+				else if(s.substring(0,1).equals("F")) {
 					
 					reply = tracker.Follow(tracker.getUser(incoming.getPort()).getHandle(), s.substring(2));
 
 				}
 		
-				if(s.substring(0,1).equals("D")) {
+				else if(s.substring(0,1).equals("D")) {
 					
 					reply = tracker.Drop(s.substring(2), tracker.getUser(incoming.getPort()).getHandle());
 					
 				}
 			
-				if(s.equals("Q")) {
+				else if(s.equals("Q")) {
 
 					reply = tracker.Query();
 
+				}
+				else {
+					reply = "Incorrect Command!";
 				}
 
 				dp = new DatagramPacket(reply.getBytes() , reply.getBytes().length , incoming.getAddress() , incoming.getPort());
