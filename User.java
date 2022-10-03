@@ -19,10 +19,7 @@ public class User {
 	private int portNumberForServer;
 	private int portNumberForLeftPort;
 	private int portNumberForRightPort;
-	
-	private List<User> follows = new ArrayList<User>();
-	private List<String> tweets = new ArrayList<String>();
-	
+
 	public String getHandle() {
 		return handle;
 	}
@@ -40,18 +37,6 @@ public class User {
 	}
 	public void setPortNumberForServer(int portNumberForServer) {
 		this.portNumberForServer = portNumberForServer;
-	}
-	public List<User> getFollows() {
-		return follows;
-	}
-	public void setFollows(List<User> follows) {
-		this.follows = follows;
-	}
-	public List<String> getTweets() {
-		return tweets;
-	}
-	public void setTweets(List<String> tweets) {
-		this.tweets = tweets;
 	}
 	public int getPortNumberForLeftPort() {
 		return portNumberForLeftPort;
@@ -71,6 +56,7 @@ public class User {
 	{
 		User user = new User();
 		DatagramSocket sock = null;
+		Boolean isConnected = true;
 		int port = 11000;
 		byte[] b;
 		byte[] data;
@@ -102,13 +88,14 @@ public class User {
 			echo("Q: to quit");
 			
 			
-			while(!s.equals("Quit"))
+			while(isConnected)
 			{
 				//take input and send the packet
 				s = (String)cin.readLine();
 				b = s.getBytes();
 				
 				dp = new DatagramPacket(b , b.length , host , port);
+				
 				sock.send(dp);
 				
 				if(s.substring(0,1).equals("R")) {
@@ -133,17 +120,24 @@ public class User {
 					}
 				}
 				
+				if(s.substring(0,1).equals("E")) {
+					isConnected = false;
+					sock.close();
+					echo("Client Closed");
+				}
+				
 				
 				buffer = new byte[65536];
 				 reply = new DatagramPacket(buffer, buffer.length);
-				sock.receive(reply);
-				data = reply.getData();
-				s = new String(data, 0, reply.getLength());
+				
+				if(isConnected) {
+					sock.receive(reply);
+					data = reply.getData();
+					s = new String(data, 0, reply.getLength());
 			
-				echo(s);
+					echo(s);
+				}
 			}
-			sock.close();
-			echo("Client Closed");
 		}
 		
 		catch(IOException e)
@@ -158,3 +152,4 @@ public class User {
 		System.out.println(msg);
 	}
 }
+
