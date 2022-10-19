@@ -12,13 +12,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
-public class User {
+public class User extends Thread{
 	
 	private String handle;
 	private InetAddress ipv4Address;
 	private int portNumberForServer;
 	private int portNumberForLeftPort;
-	private int portNumberForRightPort;
+	private String tweet;
+	//Well need a few things to send this out.
+	private User userToSendTo;
 
 	public String getHandle() {
 		return handle;
@@ -44,13 +46,101 @@ public class User {
 	public void setPortNumberForLeftPort(int portNumberForLeftPort) {
 		this.portNumberForLeftPort = portNumberForLeftPort;
 	}
-	public int getPortNumberForRightPort() {
-		return portNumberForRightPort;
+	public User getPortNumberForRightPort() {
+		return userToSendTo;
 	}
-	public void setPortNumberForRightPort(int portNumberForRightPort) {
-		this.portNumberForRightPort = portNumberForRightPort;
+	public void setPortNumberForRightPort(User userToSendTo) {
+		this.userToSendTo = userToSendTo;
 	}
 	
+	//The only thing is thread will be doing it listening.
+	public void run() {
+		DatagramSocket sock = null;
+		DatagramPacket dp;
+		String reply = "";
+		byte[] b;
+		this.userToSendTo = new User();
+		Scanner scan = new Scanner(System.in);
+		BufferedReader cin = new BufferedReader(new InputStreamReader(System.in));
+		//left is for receiving, right is for sending.
+		
+		try
+		{
+			String s = "";
+			//1. creating a server socket, parameter is local port number
+			sock = new DatagramSocket(null);
+			
+			sock.bind(new InetSocketAddress(InetAddress.getLocalHost().getHostAddress(), this.portNumberForLeftPort));
+			System.out.println("Thread: " + sock.getLocalSocketAddress());
+			
+			//buffer to receive incoming data
+			byte[] buffer = new byte[65536];
+			
+			//communication loop
+			while(true)
+			{
+				//create packet and wait for incoming packets
+				DatagramPacket incoming = new DatagramPacket(buffer, buffer.length);
+				sock.receive(incoming);
+				byte[] data = incoming.getData();
+				s = new String(data, 0, incoming.getLength());
+				System.out.println(s);
+				
+				if(s.length() > 6 && s.substring(0, 6).equals("Change")) {
+					String[] info = s.split(" ");
+					String ip = "";
+					char[] tempString = info[1].toCharArray();
+					
+					
+					for(int i = 0; i < tempString.length;i++) 
+					{
+						if(i != 0) {
+							ip += tempString[i];
+						}
+					}
+					this.userToSendTo.setIpv4Address(InetAddress.getByName(ip));
+					this.userToSendTo.setPortNumberForLeftPort(Integer.parseInt(info[2]));
+				}
+				
+				if(s.length() >= 5 && s.substring(0, 5).equals("Tweet")) {
+					reply = "User " + this.handle + " Tweeted " + s.substring(6);
+					dp = new DatagramPacket(reply.getBytes() , reply.getBytes().length , this.userToSendTo.getIpv4Address(), this.userToSendTo.getPortNumberForLeftPort());
+					sock.send(dp);
+				}
+				
+				if(s.length() >=4 && s.substring(0, 4).equals("User")) {
+					String[] tweet = s.split(" ");
+					if(tweet[1].equals(this.handle)) {
+						InetAddress host = InetAddress.getByName("192.168.99.1");
+						reply = "EndTweet";
+						dp = new DatagramPacket(reply.getBytes() , reply.getBytes().length , host , 11000);
+						sock.send(dp);
+						
+					}
+					else {
+						s = new String(data, 0, incoming.getLength());
+						reply = s;
+						dp = new DatagramPacket(reply.getBytes() , reply.getBytes().length , this.userToSendTo.getIpv4Address(), this.userToSendTo.getPortNumberForLeftPort());
+						sock.send(dp);
+						
+					}
+				}
+
+				
+				
+				//System.out.println(s);
+				//after formulating the reply, we send it out.
+				//dp = new DatagramPacket(reply.getBytes() , reply.getBytes().length , this.userToSendTo.getIpv4Address(), this.userToSendTo.getPortNumberForLeftPort());
+				//sock.send(dp);
+			}
+		}
+		
+		catch(IOException e)
+		{
+			sock.close();
+			System.err.println("IOException " + e);
+		}
+	}
 
 	public static void main(String args[])
 	{
@@ -64,6 +154,7 @@ public class User {
 		byte[] buffer;
 		DatagramPacket reply;
 		String s = "";
+		String leftPort = "";
 		
 		BufferedReader cin = new BufferedReader(new InputStreamReader(System.in));
 		Scanner scan = new Scanner(System.in);
@@ -73,12 +164,15 @@ public class User {
 			//this is just for my own use
 			echo("Enter a port to use:");
 			s = scan.nextLine();
+			echo("Enter a left port to use:");
+			leftPort = scan.nextLine();
+			user.setPortNumberForLeftPort(Integer.parseInt(leftPort));
 			sock = new DatagramSocket(null);
 //			InetAddress client = InetAddress.getLocalHost();
 //			SocketAddress clientSocket = new InetSocketAddress(client, Integer.parseInt(s));
 			
 			sock.bind(new InetSocketAddress(InetAddress.getLocalHost(), Integer.parseInt(s)));
-			InetAddress host = InetAddress.getByName("192.168.0.16");
+			InetAddress host = InetAddress.getByName("192.168.99.1");
 			echo("Address: " + sock.getLocalSocketAddress() + "Port:");
 			echo("Welcome to Tweeter! Here's a list of commands:");
 			echo("R: Registers a new user");
@@ -86,17 +180,14 @@ public class User {
 			echo("D: to drop another user");
 			echo("T: to tweet");
 			echo("Q: to quit");
-			
+
+			user.start();
 			
 			while(isConnected)
 			{
 				//take input and send the packet
 				s = (String)cin.readLine();
-				b = s.getBytes();
-				
-				dp = new DatagramPacket(b , b.length , host , port);
-				
-				sock.send(dp);
+
 				
 				if(s.substring(0,1).equals("R")) {
 					
@@ -104,11 +195,17 @@ public class User {
 					user.handle = s.substring(2);
 					user.setIpv4Address(host);
 					user.setPortNumberForServer(port);
+					s += " " + Integer.toString(user.getPortNumberForLeftPort());
 					}
 					else {
 						echo("You have already created a user!");
 					}
 				}
+				
+				b = s.getBytes();
+				
+				dp = new DatagramPacket(b , b.length , host , port);
+				sock.send(dp);
 				
 				if(s.equals("whoami") && user.handle != null) {
 					if(user.handle != null)
@@ -150,6 +247,12 @@ public class User {
 	public static void echo(String msg)
 	{
 		System.out.println(msg);
+	}
+	public String getTweet() {
+		return tweet;
+	}
+	public void setTweet(String tweet) {
+		this.tweet = tweet;
 	}
 }
 
