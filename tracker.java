@@ -24,7 +24,7 @@ public class Tracker
 	private Hashtable<String, List<User>> followers = new Hashtable<String, List<User>>();
 	
 	
-	public String Register(String handle, InetAddress ip4Address, int portNumber) 
+	public String Register(String handle, InetAddress ip4Address, int portNumber, String portNumberForLeftPort) 
 	{
 		
 		String message = "";
@@ -37,6 +37,7 @@ public class Tracker
 			tempUser.setHandle(handle);
 			tempUser.setIpv4Address(ip4Address);
 			tempUser.setPortNumberForServer(portNumber);
+			tempUser.setPortNumberForLeftPort(Integer.parseInt(portNumberForLeftPort));
 			
 			//adds then to the list that maintains the user
 			users.put(tempUser.getHandle(), tempUser);
@@ -82,25 +83,28 @@ public class Tracker
 		 */
 		
 		String message = "";
-		User tempUser = new User();
+		User follower = new User();
+		User personBeingFollowed = new User();
 		List<User> tempListOfUsers;
 		
 		//checks to see if both lists have the users
 		if(users.containsKey(handle) && users.containsKey(personToFollow))
 		{
 			
-			tempUser = users.get(handle);
+			follower = users.get(handle);
+			personBeingFollowed = users.get(personToFollow);
+			
 			tempListOfUsers = followers.get(personToFollow);
 			
 			if(tempListOfUsers == null) {
 				
 				tempListOfUsers = new ArrayList<User>();
-				tempListOfUsers.add(tempUser);
+				tempListOfUsers.add(follower);
 				followers.put(personToFollow, tempListOfUsers);
 				
 			}
 			else {
-				tempListOfUsers.add(tempUser);
+				tempListOfUsers.add(follower);
 				followers.replace(personToFollow, tempListOfUsers);
 			}
 				
@@ -155,7 +159,109 @@ public class Tracker
 		return message;
 	}
 	
-	public void Tweet(String handle) {
+	public void Tweet(String handle, DatagramSocket sock, String tweet) {
+		
+		DatagramPacket dp;
+		Boolean flag = false;
+		List<User> tempListOfFollowers;
+		User tempUser = null;
+		String reply = "";
+		
+		
+		if(followers.containsKey(handle)) {
+			tempListOfFollowers = followers.get(handle);
+			
+			if(tempListOfFollowers.size() == 1) {
+				
+				//send to followee
+				tempUser = users.get(handle);
+				reply = "Change " + tempListOfFollowers.get(0).getIpv4Address() + " " + tempListOfFollowers.get(0).getPortNumberForLeftPort();
+				dp = new DatagramPacket(reply.getBytes() , reply.getBytes().length , tempUser.getIpv4Address() , tempUser.getPortNumberForLeftPort());
+				try {
+					sock.send(dp);
+				} catch (IOException e) {
+				// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+				//send to single follower
+				reply = "Change " + tempUser.getIpv4Address() + " " + tempUser.getPortNumberForLeftPort();
+				dp = new DatagramPacket(reply.getBytes() , reply.getBytes().length , tempListOfFollowers.get(0).getIpv4Address() , tempListOfFollowers.get(0).getPortNumberForLeftPort());
+				try {
+					sock.send(dp);
+				} catch (IOException e) {
+				// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+				flag = true;
+				//reply = "Change " + tempListOfFollowers.get(0).getIpv4Address() + " " + tempListOfFollowers.get(0).getPortNumberForLeftPort();
+				
+			}
+			else {
+				
+				//send to followee
+				tempUser = users.get(handle);
+				reply = "Change " + tempListOfFollowers.get(0).getIpv4Address() + " " + tempListOfFollowers.get(0).getPortNumberForLeftPort();
+				dp = new DatagramPacket(reply.getBytes() , reply.getBytes().length , tempUser.getIpv4Address() , tempUser.getPortNumberForLeftPort());
+				try {
+					sock.send(dp);
+				} catch (IOException e) {
+				// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+				//send to list of followers
+				for(int i = 0; i < tempListOfFollowers.size(); i++) 
+				{
+					tempUser = tempListOfFollowers.get(i);
+					if((i + 1) < tempListOfFollowers.size()) {
+						reply = "Change " + tempListOfFollowers.get(i + 1).getIpv4Address() + " " + tempListOfFollowers.get(i + 1).getPortNumberForLeftPort();
+						dp = new DatagramPacket(reply.getBytes() , reply.getBytes().length , tempUser.getIpv4Address() , tempUser.getPortNumberForLeftPort());
+						try {
+							sock.send(dp);
+						} catch (IOException e) {
+						// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+					else {
+						reply = "Change " + users.get(handle).getIpv4Address() + " " + users.get(handle).getPortNumberForLeftPort();
+						dp = new DatagramPacket(reply.getBytes() , reply.getBytes().length , tempUser.getIpv4Address() , tempUser.getPortNumberForLeftPort());
+						try {
+							sock.send(dp);
+						} catch (IOException e) {
+						// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+						
+					}
+				}
+				
+				flag = true;
+			}
+			
+			//means setup has been done
+			if(flag = true) 
+			{
+				tempUser = users.get(handle);
+				reply = "Tweet " + tweet;
+				dp = new DatagramPacket(reply.getBytes() , reply.getBytes().length , tempUser.getIpv4Address() , tempUser.getPortNumberForLeftPort());
+				try {
+					sock.send(dp);
+				} catch (IOException e) {
+				// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			
+			//if(tweet.length() < 140) {
+				//reply = "Tweet" + tweet;
+			//}
+			
+		}
+		
+		
 		
 	}
 	
@@ -226,6 +332,7 @@ public class Tracker
 		Tracker tracker = new Tracker();
 		DatagramPacket dp;
 		String reply = "";
+		Boolean isLocked = true;
 		
 		try
 		{
@@ -252,8 +359,9 @@ public class Tracker
 				
 				//checks for R in command
 				if(s.substring(0,1).equals("R")) {
-
-					reply = tracker.Register(s.substring(2), incoming.getAddress(), incoming.getPort());
+					
+					String[] info = s.split(" ");
+					reply = tracker.Register(info[1], incoming.getAddress(), incoming.getPort(), info[2]);
 					reply += "\nUser: " + s.substring(2) + " IP: " + incoming.getAddress() + " Port: " + incoming.getPort();
 				}
 				
@@ -274,6 +382,22 @@ public class Tracker
 				//checks for e in command
 				else if(s.substring(0,1).equals("E")){
 					reply = tracker.Exit(tracker.getUser(incoming.getPort()).getHandle());
+				}
+				
+				else if(s.substring(0,1).equals("T")) {
+					tracker.Tweet(tracker.getUser(incoming.getPort()).getHandle(), sock, s.substring(2));
+					
+					//Here we locked the server while the tweet goes around
+					isLocked = true;
+					while(isLocked != false) {
+						incoming = new DatagramPacket(buffer, buffer.length);
+						sock.receive(incoming);
+						data = incoming.getData();
+						s = new String(data, 0, incoming.getLength());
+						if(s.equals("EndTweet")) {
+							isLocked = false;
+						}
+					}
 				}
 				
 				//checks for Q in command
