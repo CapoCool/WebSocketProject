@@ -1,4 +1,4 @@
-package socketProject;
+//package socketProject;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -84,7 +84,7 @@ public class User extends Thread{
 				sock.receive(incoming);
 				byte[] data = incoming.getData();
 				s = new String(data, 0, incoming.getLength());
-				System.out.println(s);
+				//System.out.println(s);
 				
 				if(s.length() > 6 && s.substring(0, 6).equals("Change")) {
 					String[] info = s.split(" ");
@@ -104,6 +104,8 @@ public class User extends Thread{
 				
 				if(s.length() >= 5 && s.substring(0, 5).equals("Tweet")) {
 					reply = "User " + this.handle + " Tweeted " + s.substring(6);
+					reply += "\nPrevious Hop"+ " " + this.handle;
+					//System.out.println(reply);
 					dp = new DatagramPacket(reply.getBytes() , reply.getBytes().length , this.userToSendTo.getIpv4Address(), this.userToSendTo.getPortNumberForLeftPort());
 					sock.send(dp);
 				}
@@ -111,7 +113,8 @@ public class User extends Thread{
 				if(s.length() >=4 && s.substring(0, 4).equals("User")) {
 					String[] tweet = s.split(" ");
 					if(tweet[1].equals(this.handle)) {
-						InetAddress host = InetAddress.getByName("192.168.99.1");
+						System.out.println("\nTweet has returned to sender: " + s + "\n");
+						InetAddress host = InetAddress.getByName("128.110.219.14");
 						reply = "EndTweet";
 						dp = new DatagramPacket(reply.getBytes() , reply.getBytes().length , host , 11000);
 						sock.send(dp);
@@ -119,7 +122,9 @@ public class User extends Thread{
 					}
 					else {
 						s = new String(data, 0, incoming.getLength());
+						System.out.println(s);
 						reply = s;
+						reply += "\nPrevious Hop"+ " " + this.handle;
 						dp = new DatagramPacket(reply.getBytes() , reply.getBytes().length , this.userToSendTo.getIpv4Address(), this.userToSendTo.getPortNumberForLeftPort());
 						sock.send(dp);
 						
@@ -147,6 +152,7 @@ public class User extends Thread{
 		User user = new User();
 		DatagramSocket sock = null;
 		Boolean isConnected = true;
+		Boolean dontSend = false;
 		int port = 11000;
 		byte[] b;
 		byte[] data;
@@ -172,7 +178,7 @@ public class User extends Thread{
 //			SocketAddress clientSocket = new InetSocketAddress(client, Integer.parseInt(s));
 			
 			sock.bind(new InetSocketAddress(InetAddress.getLocalHost(), Integer.parseInt(s)));
-			InetAddress host = InetAddress.getByName("192.168.99.1");
+			InetAddress host = InetAddress.getByName("128.110.219.14");
 			echo("Address: " + sock.getLocalSocketAddress() + "Port:");
 			echo("Welcome to Tweeter! Here's a list of commands:");
 			echo("R: Registers a new user");
@@ -189,7 +195,7 @@ public class User extends Thread{
 				s = (String)cin.readLine();
 
 				
-				if(s.substring(0,1).equals("R")) {
+				if(s != "" && s.substring(0,1).equals("R")) {
 					
 					if(user.handle == null) {
 					user.handle = s.substring(2);
@@ -206,6 +212,7 @@ public class User extends Thread{
 				
 				dp = new DatagramPacket(b , b.length , host , port);
 				sock.send(dp);
+				
 				
 				if(s.equals("whoami") && user.handle != null) {
 					if(user.handle != null)
