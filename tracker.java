@@ -1,4 +1,4 @@
-package socketProject;
+//package socketProject;
 
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
@@ -69,6 +69,9 @@ public class Tracker
 			
 		}
 		
+		if(res == "") {
+			res = "There are no users";
+		}
 		return res;
 		
 		
@@ -159,13 +162,14 @@ public class Tracker
 		return message;
 	}
 	
-	public void Tweet(String handle, DatagramSocket sock, String tweet) {
+	public String Tweet(String handle, DatagramSocket sock, String tweet) {
 		
 		DatagramPacket dp;
 		Boolean flag = false;
 		List<User> tempListOfFollowers;
 		User tempUser = null;
 		String reply = "";
+		String res;
 		
 		
 		if(followers.containsKey(handle)) {
@@ -255,13 +259,17 @@ public class Tracker
 				}
 			}
 			
+			res = "SUCCESS";
 			//if(tweet.length() < 140) {
 				//reply = "Tweet" + tweet;
 			//}
 			
 		}
+		else {
+			res = "FAILURE";
+		}
 		
-		
+		return res;
 		
 	}
 	
@@ -333,6 +341,7 @@ public class Tracker
 		DatagramPacket dp;
 		String reply = "";
 		Boolean isLocked = true;
+		User tmpUser;
 		
 		try
 		{
@@ -356,27 +365,44 @@ public class Tracker
 				sock.receive(incoming);
 				byte[] data = incoming.getData();
 				s = new String(data, 0, incoming.getLength());
+				System.out.println("Received: " + s);
 				
 				//checks for R in command
 				if(s.substring(0,1).equals("R")) {
 					
 					String[] info = s.split(" ");
-					reply = tracker.Register(info[1], incoming.getAddress(), incoming.getPort(), info[2]);
+					if(info.length == 3) {
+						reply = tracker.Register(info[1], incoming.getAddress(), incoming.getPort(), info[2]);
+					}
+					else {
+						reply = tracker.Register(info[1], incoming.getAddress(), incoming.getPort(), "00000");
+					}
 					reply += "\nUser: " + s.substring(2) + " IP: " + incoming.getAddress() + " Port: " + incoming.getPort();
 				}
 				
 				//checks for F for command
 				else if(s.substring(0,1).equals("F")) {
+					tmpUser = tracker.getUser(incoming.getPort());
 					
-					reply = tracker.Follow(tracker.getUser(incoming.getPort()).getHandle(), s.substring(2));
+					if(tmpUser != null && !(tmpUser.getHandle().equals(s.substring(2)))) {
+						reply = tracker.Follow(tracker.getUser(incoming.getPort()).getHandle(), s.substring(2));
+					}
+					else {
+						reply = "FAILURE";
+					}
 
 				}
 				
 				//checks for D in command
 				else if(s.substring(0,1).equals("D")) {
+					tmpUser = tracker.getUser(incoming.getPort());
 					
-					reply = tracker.Drop(tracker.getUser(incoming.getPort()).getHandle(), s.substring(2));
-					
+					if(tmpUser != null) {
+						reply = tracker.Drop(tracker.getUser(incoming.getPort()).getHandle(), s.substring(2));
+					}
+					else {
+						reply = "FAILURE";
+					}
 				}
 				
 				//checks for e in command
@@ -385,18 +411,31 @@ public class Tracker
 				}
 				
 				else if(s.substring(0,1).equals("T")) {
-					tracker.Tweet(tracker.getUser(incoming.getPort()).getHandle(), sock, s.substring(2));
 					
+					tmpUser = tracker.getUser(incoming.getPort());
+					
+					if(tmpUser != null) {
+						reply = tracker.Tweet(tracker.getUser(incoming.getPort()).getHandle(), sock, s.substring(2));
 					//Here we locked the server while the tweet goes around
-					isLocked = true;
-					while(isLocked != false) {
-						incoming = new DatagramPacket(buffer, buffer.length);
-						sock.receive(incoming);
-						data = incoming.getData();
-						s = new String(data, 0, incoming.getLength());
-						if(s.equals("EndTweet")) {
-							isLocked = false;
+						isLocked = true;
+						if(reply.equals("SUCCESS")) {
+							while(isLocked != false) {
+								dp = new DatagramPacket(buffer, buffer.length);
+								System.out.println("tracker");
+								sock.receive(dp);
+								data = dp.getData();
+								s = new String(data, 0, dp.getLength());
+							
+								if(s.equals("EndTweet")) {
+									isLocked = false;
+								}
+							
+								reply = "Tweet Ended";
+							}
 						}
+					}
+					else {
+						reply = "FAILURE";
 					}
 				}
 				
@@ -413,6 +452,7 @@ public class Tracker
 				//after formulating the reply, we send it out.
 				dp = new DatagramPacket(reply.getBytes() , reply.getBytes().length , incoming.getAddress() , incoming.getPort());
 				sock.send(dp);
+				System.out.println("Sent: " + reply);
 			}
 		}
 		
