@@ -176,7 +176,8 @@ public class User extends Thread{
 			echo("F: to follow another user");
 			echo("D: to drop another user");
 			echo("T: to tweet");
-			echo("Q: to quit");
+			echo("Q: to query");
+			echo("E: to exit");
 
 			user.start();
 			
