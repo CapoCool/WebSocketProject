@@ -19,7 +19,7 @@ public class User extends Thread{
 	private int portNumberForServer;
 	private int portNumberForLeftPort;
 	private String tweet;
-	//Well need a few things to send this out.
+	//We'll need a few things to send this out.
 	private User userToSendTo;
 
 	public String getHandle() {
@@ -53,7 +53,7 @@ public class User extends Thread{
 		this.userToSendTo = userToSendTo;
 	}
 	
-	//The only thing is thread will be doing it listening.
+	//The only thing this thread will be doing is listening.
 	public void run() {
 		DatagramSocket sock = null;
 		DatagramPacket dp;
@@ -130,13 +130,6 @@ public class User extends Thread{
 						
 					}
 				}
-
-				
-				
-				//System.out.println(s);
-				//after formulating the reply, we send it out.
-				//dp = new DatagramPacket(reply.getBytes() , reply.getBytes().length , this.userToSendTo.getIpv4Address(), this.userToSendTo.getPortNumberForLeftPort());
-				//sock.send(dp);
 			}
 		}
 		
@@ -174,8 +167,6 @@ public class User extends Thread{
 			leftPort = scan.nextLine();
 			user.setPortNumberForLeftPort(Integer.parseInt(leftPort));
 			sock = new DatagramSocket(null);
-//			InetAddress client = InetAddress.getLocalHost();
-//			SocketAddress clientSocket = new InetSocketAddress(client, Integer.parseInt(s));
 			
 			sock.bind(new InetSocketAddress(InetAddress.getLocalHost(), Integer.parseInt(s)));
 			InetAddress host = InetAddress.getByName("128.110.219.14");
