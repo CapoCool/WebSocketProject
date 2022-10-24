@@ -184,7 +184,6 @@ public class Tracker
 				try {
 					sock.send(dp);
 				} catch (IOException e) {
-				// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 				
@@ -194,7 +193,6 @@ public class Tracker
 				try {
 					sock.send(dp);
 				} catch (IOException e) {
-				// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 				
@@ -211,7 +209,6 @@ public class Tracker
 				try {
 					sock.send(dp);
 				} catch (IOException e) {
-				// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 				
@@ -225,7 +222,6 @@ public class Tracker
 						try {
 							sock.send(dp);
 						} catch (IOException e) {
-						// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
 					}
@@ -235,7 +231,6 @@ public class Tracker
 						try {
 							sock.send(dp);
 						} catch (IOException e) {
-						// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
 						
@@ -254,15 +249,11 @@ public class Tracker
 				try {
 					sock.send(dp);
 				} catch (IOException e) {
-				// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
 			
 			res = "SUCCESS";
-			//if(tweet.length() < 140) {
-				//reply = "Tweet" + tweet;
-			//}
 			
 		}
 		else {
@@ -274,7 +265,7 @@ public class Tracker
 	}
 	
 	public void EndTweet(String handle) {
-		
+		//See line 419 for EndTweet functionality; it is built into the code itself!
 	}
 	
 	public String Exit(String handle) {
